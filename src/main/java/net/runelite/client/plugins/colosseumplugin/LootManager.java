@@ -16,7 +16,7 @@ public class LootManager {
     @Inject
     private ColosseumPluginConfig config;
 
-    private final Queue<String> lootQueue = new ArrayDeque<>();
+    private final Queue<LootEntry> lootQueue = new ArrayDeque<>();
 
     public void onItemSpawned(ItemSpawned event) {
         if (!config.autoLoot()) {
@@ -27,27 +27,34 @@ public class LootManager {
             return;
         }
 
-        ItemComposition itemDef = client.getItemDefinition(event.getItem().getId());
-        if (itemDef == null) {
+        int itemId = event.getItem().getId();
+        ItemComposition def = client.getItemDefinition(itemId);
+
+        if (def == null || def.getName() == null || def.getName().isEmpty()) {
             return;
         }
 
-        String itemName = itemDef.getName();
-        if (itemName == null || itemName.isEmpty()) {
-            return;
+        String itemName = def.getName();
+
+        if (shouldLoot(itemName)) {
+            lootQueue.add(new LootEntry(itemId, itemName));
+            log.debug("[Colosseum] Loot queued: {}", itemName);
+        }
+    }
+
+    private boolean shouldLoot(String itemName) {
+        String lootList = config.lootList();
+        if (lootList == null || lootList.trim().isEmpty()) {
+            return true;
         }
 
-        if (config.lootList() == null || config.lootList().isEmpty()) {
-            lootQueue.add(itemName);
-            return;
-        }
-
-        for (String allowed : config.lootList().split(",")) {
-            if (allowed.trim().equalsIgnoreCase(itemName.trim())) {
-                lootQueue.add(itemName);
-                break;
+        for (String allowed : lootList.split(",")) {
+            if (itemName.equalsIgnoreCase(allowed.trim())) {
+                return true;
             }
         }
+
+        return false;
     }
 
     public void processQueue() {
@@ -56,15 +63,24 @@ public class LootManager {
         }
 
         while (!lootQueue.isEmpty()) {
-            String itemName = lootQueue.poll();
-            if (itemName == null) {
-                continue;
+            LootEntry entry = lootQueue.poll();
+            if (entry != null) {
+                log.debug("[Colosseum] Processing loot: {} (ID: {})", entry.itemName, entry.itemId);
             }
-            log.debug("Queued loot item: {}", itemName);
         }
     }
 
     public void clear() {
         lootQueue.clear();
+    }
+
+    static class LootEntry {
+        final int itemId;
+        final String itemName;
+
+        LootEntry(int itemId, String itemName) {
+            this.itemId = itemId;
+            this.itemName = itemName;
+        }
     }
 }

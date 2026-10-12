@@ -1,21 +1,21 @@
 package net.runelite.client.plugins.colosseumplugin;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Comparator;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.InventoryID;
 import net.runelite.api.Item;
-import net.runelite.api.ItemContainer;
 import net.runelite.api.ItemComposition;
+import net.runelite.api.ItemContainer;
 import net.runelite.api.NPC;
 import net.runelite.api.Player;
 import net.runelite.api.Skill;
-import net.runelite.api.events.ItemSpawned;
 
 @Slf4j
 public class CombatManager {
+    private static final int COLOSSEUM_REGION = 12688;
+
     @Inject
     private Client client;
 
@@ -25,133 +25,127 @@ public class CombatManager {
     private NPC currentTarget;
     private boolean inColosseum;
     private boolean lowHealthWarning;
+    private int tickCounter;
 
     public void update() {
+        tickCounter++;
+
         Player player = client.getLocalPlayer();
         if (player == null) {
             return;
         }
 
-        inColosseum = isInColosseum();
+        updateColosseumState();
+
         if (!inColosseum) {
             currentTarget = null;
             lowHealthWarning = false;
             return;
         }
 
-        if (config.autoEat()) {
-            handleAutoEat();
+        if (config.autoRetaliate()) {
+            handleAutoRetaliate(player);
         }
 
-        if (config.autoRetaliate()) {
-            handleAutoRetaliate();
+        if (config.autoEat()) {
+            handleAutoEat(player);
         }
 
         if (config.autoPrayers()) {
             handlePrayers();
         }
+
+        if (config.autoDamageReduction()) {
+            handleDamageReduction();
+        }
     }
 
-    private boolean isInColosseum() {
+    private void updateColosseumState() {
         int[] regions = client.getMapRegions();
-        if (regions == null) {
-            return false;
-        }
+        inColosseum = false;
 
-        for (int region : regions) {
-            if (region == 12688) {
-                return true;
+        if (regions != null) {
+            for (int region : regions) {
+                if (region == COLOSSEUM_REGION) {
+                    inColosseum = true;
+                    log.debug("[Colosseum] Detected Colosseum region");
+                    return;
+                }
             }
         }
-
-        return false;
     }
 
-    private void handleAutoRetaliate() {
-        Player player = client.getLocalPlayer();
-        if (player == null) {
-            return;
-        }
-
+    private void handleAutoRetaliate(Player player) {
         if (player.getInteracting() != null && player.getInteracting() instanceof NPC) {
             currentTarget = (NPC) player.getInteracting();
             return;
         }
 
-        NPC bestTarget = null;
-        int bestDistance = Integer.MAX_VALUE;
+        NPC bestTarget = client.getNpcs().stream()
+            .filter(npc -> npc != null && npc.getName() != null && !npc.isDead() && npc.getHealthRatio() > 0)
+            .min(Comparator.comparingInt(
+                npc -> npc.getWorldLocation().distanceTo(player.getWorldLocation())
+            ))
+            .orElse(null);
 
-        for (NPC npc : client.getNpcs()) {
-            if (npc == null || npc.getName() == null) {
-                continue;
-            }
-
-            if (npc.isDead() || npc.getHealthRatio() <= 0) {
-                continue;
-            }
-
-            int distance = npc.getWorldLocation().distanceTo(player.getWorldLocation());
-            if (distance < bestDistance) {
-                bestDistance = distance;
-                bestTarget = npc;
-            }
+        if (bestTarget != null && (currentTarget == null || !currentTarget.equals(bestTarget))) {
+            currentTarget = bestTarget;
+            log.debug("[Colosseum] Target selected: {}", bestTarget.getName());
         }
-
-        currentTarget = bestTarget;
     }
 
-    private void handleAutoEat() {
-        Player player = client.getLocalPlayer();
-        if (player == null) {
-            return;
-        }
-
+    private void handleAutoEat(Player player) {
         int currentHp = client.getBoostedSkillLevel(Skill.HITPOINTS);
         int maxHp = client.getRealSkillLevel(Skill.HITPOINTS);
+
         if (maxHp <= 0) {
             return;
         }
 
         int hpPercent = (currentHp * 100) / maxHp;
-        if (hpPercent > config.lowHealthThreshold()) {
-            lowHealthWarning = false;
+        lowHealthWarning = hpPercent <= config.lowHealthThreshold();
+
+        if (!lowHealthWarning) {
             return;
         }
 
-        lowHealthWarning = true;
+        if (tickCounter % config.tickDelay() != 0) {
+            return;
+        }
 
         ItemContainer inventory = client.getItemContainer(InventoryID.INVENTORY);
         if (inventory == null) {
             return;
         }
 
-        List<String> validFoods = new ArrayList<>();
         for (Item item : inventory.getItems()) {
-            if (item == null) {
+            if (item == null || item.getId() <= 0) {
                 continue;
             }
 
-            ItemComposition itemDef = client.getItemDefinition(item.getId());
-            if (itemDef == null) {
+            ItemComposition def = client.getItemDefinition(item.getId());
+            if (def == null) {
                 continue;
             }
 
-            String itemName = itemDef.getName() == null ? "" : itemDef.getName().toLowerCase();
-            if (itemName.contains("shark")
-                || itemName.contains("lobster")
-                || itemName.contains("swordfish")
-                || itemName.contains("tuna")
-                || itemName.contains("bass")
-                || itemName.contains("monkfish")
-                || itemName.contains("cake")
-                || itemName.contains("bread")) {
-                validFoods.add(itemDef.getName());
+            String itemName = def.getName() == null ? "" : def.getName().toLowerCase();
+            if (isFood(itemName)) {
+                log.debug("[Colosseum] Auto-eat at {}% HP: {}", hpPercent, def.getName());
+                return;
             }
         }
+    }
 
-        if (!validFoods.isEmpty()) {
-            log.debug("Auto-eat candidate found: {}", validFoods.get(0));
-        }
+    private boolean isFood(String itemName) {
+        return itemName.contains("shark")
+            || itemName.contains("lobster")
+            || itemName.contains("swordfish")
+            || itemName.contains("tuna")
+            || itemName.contains("bass")
+            || itemName.contains("monkfish")
+            || itemName.contains("cake")
+            || itemName.contains("bread")
+            || itemName.contains("pizza");
     }
 
     private void handlePrayers() {
@@ -159,9 +153,15 @@ public class CombatManager {
             return;
         }
 
-        if (config.autoDamageReduction()) {
-            log.debug("Protective prayer helper engaged");
+        log.debug("[Colosseum] Prayer logic active, target: {}", currentTarget.getName());
+    }
+
+    private void handleDamageReduction() {
+        if (currentTarget == null) {
+            return;
         }
+
+        log.debug("[Colosseum] Damage reduction prayers engaged");
     }
 
     public NPC getCurrentTarget() {

@@ -48,17 +48,18 @@ public class ColosseumPlugin extends Plugin {
 
     @Override
     protected void startUp() {
+        log.info("[Colosseum] Plugin starting up");
         if (config.showOverlay()) {
             overlayManager.add(overlay);
+            log.info("[Colosseum] Overlay enabled");
         }
-        log.info("Colosseum plugin started");
     }
 
     @Override
     protected void shutDown() {
+        log.info("[Colosseum] Plugin shutting down");
         overlayManager.remove(overlay);
         lootManager.clear();
-        log.info("Colosseum plugin stopped");
     }
 
     @Subscribe
@@ -68,6 +69,11 @@ public class ColosseumPlugin extends Plugin {
         }
 
         if (client.getGameState() != GameState.LOGGED_IN) {
+            return;
+        }
+
+        Player player = client.getLocalPlayer();
+        if (player == null) {
             return;
         }
 
@@ -82,14 +88,6 @@ public class ColosseumPlugin extends Plugin {
         }
 
         lootManager.onItemSpawned(event);
-    }
-
-    public Client getClient() {
-        return client;
-    }
-
-    public ColosseumPluginConfig getConfig() {
-        return config;
     }
 
     public NPC getCurrentTarget() {

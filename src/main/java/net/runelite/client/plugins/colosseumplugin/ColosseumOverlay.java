@@ -11,7 +11,7 @@ import net.runelite.client.ui.overlay.components.LineComponent;
 import net.runelite.client.ui.overlay.components.PanelComponent;
 import net.runelite.client.ui.overlay.components.TitleComponent;
 
-class ColosseumOverlay extends OverlayPanel {
+public class ColosseumOverlay extends OverlayPanel {
     private final PanelComponent panelComponent = new PanelComponent();
 
     @Inject
@@ -23,7 +23,7 @@ class ColosseumOverlay extends OverlayPanel {
     @Inject
     private ColosseumPlugin plugin;
 
-    ColosseumOverlay() {
+    public ColosseumOverlay() {
         setPosition(OverlayPosition.TOP_LEFT);
         setDragTarget(false);
         setResizable(false);
@@ -36,7 +36,7 @@ class ColosseumOverlay extends OverlayPanel {
         }
 
         panelComponent.getChildren().clear();
-        panelComponent.setPreferredSize(new Dimension(220, 0));
+        panelComponent.setPreferredSize(new Dimension(240, 0));
         panelComponent.getChildren().add(TitleComponent.builder().text("Colosseum").build());
 
         panelComponent.getChildren().add(LineComponent.builder()
@@ -62,7 +62,7 @@ class ColosseumOverlay extends OverlayPanel {
         }
 
         panelComponent.getChildren().add(LineComponent.builder()
-            .left("Low HP")
+            .left("Low HP Warning")
             .right(plugin.isLowHealthWarning() ? "Yes" : "No")
             .build());
 

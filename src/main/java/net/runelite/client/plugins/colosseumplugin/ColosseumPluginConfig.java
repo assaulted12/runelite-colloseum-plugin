@@ -30,7 +30,7 @@ public interface ColosseumPluginConfig extends Config {
     @ConfigItem(
         keyName = "autoRetaliate",
         name = "Auto Retaliate",
-        description = "Find and track the nearest valid target",
+        description = "Automatically find and target the nearest NPC",
         position = 2
     )
     default boolean autoRetaliate() {
@@ -40,7 +40,7 @@ public interface ColosseumPluginConfig extends Config {
     @ConfigItem(
         keyName = "autoEat",
         name = "Auto Eat",
-        description = "Use food when health falls below the threshold",
+        description = "Eat food when health falls below threshold",
         position = 3
     )
     default boolean autoEat() {
@@ -50,7 +50,7 @@ public interface ColosseumPluginConfig extends Config {
     @ConfigItem(
         keyName = "autoPrayers",
         name = "Auto Prayers",
-        description = "Use prayer helper logic while fighting",
+        description = "Activate protective prayers during combat",
         position = 4
     )
     default boolean autoPrayers() {
@@ -60,7 +60,7 @@ public interface ColosseumPluginConfig extends Config {
     @ConfigItem(
         keyName = "autoDamageReduction",
         name = "Damage Reduction",
-        description = "Activate protective prayer logic",
+        description = "Prioritize damage-reducing prayers",
         position = 5
     )
     default boolean autoDamageReduction() {
@@ -70,7 +70,7 @@ public interface ColosseumPluginConfig extends Config {
     @ConfigItem(
         keyName = "autoLoot",
         name = "Auto Loot",
-        description = "Queue nearby loot items for cleanup",
+        description = "Queue nearby loot items",
         position = 6
     )
     default boolean autoLoot() {
@@ -80,7 +80,7 @@ public interface ColosseumPluginConfig extends Config {
     @ConfigItem(
         keyName = "lootList",
         name = "Loot Items",
-        description = "Comma-separated items to monitor; leave blank to accept all",
+        description = "Comma-separated item names to loot (leave blank for all)",
         position = 7
     )
     default String lootList() {
@@ -91,7 +91,7 @@ public interface ColosseumPluginConfig extends Config {
     @ConfigItem(
         keyName = "lowHealthThreshold",
         name = "Low HP Threshold (%)",
-        description = "Health percentage that triggers food logic",
+        description = "Health percentage that triggers auto-eat",
         position = 8
     )
     default int lowHealthThreshold() {
@@ -102,7 +102,7 @@ public interface ColosseumPluginConfig extends Config {
     @ConfigItem(
         keyName = "tickDelay",
         name = "Tick Delay",
-        description = "Delay between action checks in ticks",
+        description = "Delay between action checks (in game ticks)",
         position = 9
     )
     default int tickDelay() {

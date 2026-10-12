@@ -20,7 +20,7 @@ public interface ColosseumPluginConfig extends Config {
     @ConfigItem(
         keyName = "showOverlay",
         name = "Show Overlay",
-        description = "Display the Colosseum helper overlay",
+        description = "Display the Colosseum overlay",
         position = 1
     )
     default boolean showOverlay() {
@@ -30,7 +30,7 @@ public interface ColosseumPluginConfig extends Config {
     @ConfigItem(
         keyName = "autoRetaliate",
         name = "Auto Retaliate",
-        description = "Automatically engage and attack the nearest valid NPC",
+        description = "Find and track the nearest valid target",
         position = 2
     )
     default boolean autoRetaliate() {
@@ -40,7 +40,7 @@ public interface ColosseumPluginConfig extends Config {
     @ConfigItem(
         keyName = "autoEat",
         name = "Auto Eat",
-        description = "Eat food when health falls below threshold",
+        description = "Use food when health falls below the threshold",
         position = 3
     )
     default boolean autoEat() {
@@ -50,7 +50,7 @@ public interface ColosseumPluginConfig extends Config {
     @ConfigItem(
         keyName = "autoPrayers",
         name = "Auto Prayers",
-        description = "Use protective prayers",
+        description = "Use prayer helper logic while fighting",
         position = 4
     )
     default boolean autoPrayers() {
@@ -60,7 +60,7 @@ public interface ColosseumPluginConfig extends Config {
     @ConfigItem(
         keyName = "autoDamageReduction",
         name = "Damage Reduction",
-        description = "Prioritize damage reduction prayers",
+        description = "Activate protective prayer logic",
         position = 5
     )
     default boolean autoDamageReduction() {
@@ -70,7 +70,7 @@ public interface ColosseumPluginConfig extends Config {
     @ConfigItem(
         keyName = "autoLoot",
         name = "Auto Loot",
-        description = "Automatically pickup drops",
+        description = "Queue nearby loot items for cleanup",
         position = 6
     )
     default boolean autoLoot() {
@@ -78,20 +78,10 @@ public interface ColosseumPluginConfig extends Config {
     }
 
     @ConfigItem(
-        keyName = "autoPickupRewards",
-        name = "Auto Pickup Rewards",
-        description = "Automatically collect wave rewards",
-        position = 7
-    )
-    default boolean autoPickupRewards() {
-        return true;
-    }
-
-    @ConfigItem(
         keyName = "lootList",
         name = "Loot Items",
-        description = "Comma-separated list of items to loot (empty = all)",
-        position = 8
+        description = "Comma-separated items to monitor; leave blank to accept all",
+        position = 7
     )
     default String lootList() {
         return "";
@@ -101,19 +91,19 @@ public interface ColosseumPluginConfig extends Config {
     @ConfigItem(
         keyName = "lowHealthThreshold",
         name = "Low HP Threshold (%)",
-        description = "HP percentage at which to eat",
-        position = 9
+        description = "Health percentage that triggers food logic",
+        position = 8
     )
     default int lowHealthThreshold() {
         return 45;
     }
 
-    @Range(min = 0, max = 10)
+    @Range(min = 1, max = 10)
     @ConfigItem(
         keyName = "tickDelay",
         name = "Tick Delay",
-        description = "Delay between actions (0 = every tick)",
-        position = 10
+        description = "Delay between action checks in ticks",
+        position = 9
     )
     default int tickDelay() {
         return 1;
